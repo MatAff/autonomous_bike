@@ -1,0 +1,12 @@
+
+# Components
+bike
+stepper motor
+bracket
+stepper motor cog
+steer axel cog
+belt
+motor controller
+up board
+imu
+
