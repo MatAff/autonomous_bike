@@ -26,25 +26,41 @@ class IMU():
 				self.failed = True
 			return 0,0,0
 
+def turn_left(steps):
+	print('turning left')
+	for s in range(steps):
+	    kit.stepper1.onestep(direction=1, style=2)
+
+def turn_right(steps):
+	print('turning right')
+	for s in range(steps):
+	    kit.stepper1.onestep(direction=0, style=2)
+
 kit = MotorKit()
-sensor = IMU()
+imu = IMU()
 
 steps = 10
-threshold = 4
+pos = 0
+threshold = 1
 
 try:
 	while 1:
-		x, y, z = sensor.get_accelerometer()
-		if y > threshold:
-			print('turning right')
-			for i in range(steps):
-			    kit.stepper1.onestep(direction=0, style=2)
-		elif y < -threshold:
-			print('turning left')
-			for i in range(steps):
-			    kit.stepper1.onestep(direction=1, style=2)
+		x, y, z = imu.get_accelerometer()
+		if y < -threshold:
+			turn_right(steps)
+			pos += steps
+		elif y > threshold:
+			turn_left(steps)
+			pos -= steps
+		elif pos > 0:
+			turn_left(steps)
+			pos -= steps
+		elif pos < 0:
+			turn_right(steps)
+			pos += steps
 		else:
 			kit.stepper1.release()
+		print('position', pos)
 
 except KeyboardInterrupt:
 	kit.stepper1.release()
