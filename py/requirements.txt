@@ -1,0 +1,3 @@
+adafruit-blinka
+RPI.GPIO
+adafruit-circuitpython-bno055

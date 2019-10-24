@@ -14,22 +14,27 @@ class BigBoy(object):
     def __init__(self):
         self.pos = 0
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(PIN_PUL, GPIO.OUT, GPIO.LOW)
-        GPIO.setup(PIN_DIR, GPIO.OUT, GPIO.LOW)
-        GPIO.setup(PIN_ENA, GPIO.OUT, GPIO.LOW)
+        GPIO.setup(PIN_PUL, GPIO.OUT, initial=GPIO.LOW)
+        GPIO.setup(PIN_DIR, GPIO.OUT, initial=GPIO.LOW)
+        GPIO.setup(PIN_ENA, GPIO.OUT, initial=GPIO.LOW)
 
-    def step(self, steps):
+    def step(self, steps, wait=0.001):
         if steps > 0 :
             GPIO.output(PIN_DIR, GPIO.HIGH)
         else:
             GPIO.output(PIN_DIR, GPIO.LOW)
         for s in range(abs(steps)):
             GPIO.output(PIN_PUL, GPIO.HIGH)
-            time.sleep(0.075)
+            time.sleep(wait/2)
             GPIO.output(PIN_PUL, GPIO.LOW)
-            time.sleep(0.075)
+            time.sleep(wait/2)
 
     def release(self):
+        GPIO.output(PIN_ENA, GPIO.HIGH)
+
+    def cleanup(self):
+        GPIO.output(PIN_ENA, GPIO.HIGH)
+        time.sleep(0.5)
         GPIO.cleanup()
 
 #class Steering():
@@ -54,7 +59,17 @@ class BigBoy(object):
 
 if __name__ == "__main__":
 
-    mtr = BigBoy()
-    mtr.step(1)
-    mtr.release()
+    import sys
+    steps = 5
+    wait = 0.001
 
+    try:
+        steps = int(sys.argv[1])
+        wait = float(sys.argv[2])
+    except:
+        pass
+
+    mtr = BigBoy()
+    print('stepping', steps, 'steps over', wait, 's')
+    mtr.step(steps, wait)
+    mtr.cleanup()

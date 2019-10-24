@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import time
 from fps import FPS
 from stepper import BigBoy
 from imu import IMU
@@ -11,32 +12,41 @@ class Bike():
 		self.imu = IMU()
 		self.fps = FPS(1.0)
 
-		self.steps = 4
+		self.steps = 5
+		self.max_steps = 60
 		self.pos = 0
-		self.threshold = 0.2
+		self.threshold = 1.5
 
 	def balance(self):
-		x, y, z = bike.imu.get_accelerometer()
+		tilt = bike.imu.get_tilt()
+		print('tilt', tilt)
 
-		if y < -self.threshold:
-			self.mtr.turn_right(self.steps)
-		elif y > self.threshold:
-			self.mtr.turn_left(self.steps)
-		elif self.mtr.pos > 0:
-			self.mtr.turn_left(self.steps)
-		elif self.mtr.pos < 0:
-			self.mtr.turn_right(self.steps)
-		else:
-			self.mtr.release()
+		if tilt < -self.threshold:
+			print('leaning left')
+			self.try_step(self.steps)
+		elif tilt > self.threshold:
+			print('leaning right')
+			self.try_step(-self.steps)
+		elif self.pos > 0:
+			print('recentering')
+			self.try_step(-self.steps)
+		elif self.pos < 0:
+			print('recentering')
+			self.try_step(self.steps)
 
-		#print('position', self.mtr.pos)
+		print('position', self.mtr.pos)
+
+	def try_step(self, steps):
+		if abs(self.pos + steps) <= self.max_steps:
+			self.pos += steps
+			self.mtr.step(steps)
 
 	def updateFPS(self):
 		self.fps.update(verbose=True)
 
 	def cleanup(self):
 		print('cleanup')
-		self.mtr.release()
+		self.mtr.cleanup()
 
 bike = Bike()
 
@@ -44,6 +54,10 @@ try:
 	while 1:
 		bike.updateFPS()
 		bike.balance()
+
+#	bike.mtr.step(-500)
+#	bike.mtr.step(500)
+
 
 except KeyboardInterrupt:
 	print('KeyboardInterrupt detected')
