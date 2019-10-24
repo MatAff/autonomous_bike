@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import time
-
-from adafruit_motorkit import MotorKit
-import board
-import busio
-import adafruit_bno055
-
 from fps import FPS
+from stepper import BigBoy
+from imu import IMU
 
 class Bike():
 	def __init__(self):
-		self.mtr = Steering()
+		self.mtr = BigBoy()
 		self.imu = IMU()
 		self.fps = FPS(1.0)
 
@@ -43,44 +38,6 @@ class Bike():
 		print('cleanup')
 		self.mtr.release()
 
-class IMU():
-	def __init__(self):
-		self.i2c = busio.I2C(board.SCL, board.SDA)
-		self.sensor = adafruit_bno055.BNO055(self.i2c)
-		self.failed = False
-
-	def get_accelerometer(self):
-		try:
-			if self.failed:
-				self.sensor = adafruit_bno055.BNO055(self.i2c)
-				self.failed = False
-			return self.sensor.accelerometer
-		except Exception as e:
-			print(e)
-			if not self.failed:
-				self.failed = True
-			return 0,0,0
-
-class Steering():
-	def __init__(self):
-		self.pos = 0
-		self.kit = MotorKit()
-
-	def turn_left(self, steps):
-		#print('turning left')
-		for s in range(steps):
-		    self.kit.stepper1.onestep(direction=1, style=2)
-		self.pos -= steps
-	
-	def turn_right(self, steps):
-		#print('turning right')
-		for s in range(steps):
-		    self.kit.stepper1.onestep(direction=0, style=2)
-		self.pos += steps
-
-	def release(self):
-		self.kit.stepper1.release()
-
 bike = Bike()
 
 try:
@@ -92,3 +49,5 @@ except KeyboardInterrupt:
 	print('KeyboardInterrupt detected')
 finally:
 	bike.cleanup()
+
+
