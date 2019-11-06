@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     import sys
     steps = 5
-    wait = 0.001
+    wait = 0.01
 
     try:
         steps = int(sys.argv[1])
