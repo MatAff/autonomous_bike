@@ -60,25 +60,45 @@ class BigBoy(object):
 class MusicalMotor():
     def __init__(self, mtr):
         self.mtr = mtr
+
+        self.basefrequency = 4800
         self.basenote = "e"
-        self.basefrequency = 1 / 0.0002
-        self.baseoctave = 5
+        self.baseoctave = 4
+
+        self.bps = 60 / 60
+        self.release_length = 0.025
+
         self.noteletters = ["a", "a#", "b", "c", "c#", "d", "d#", "e", "f", "f#", "g", "g#"]
-        self.notes = {}
+
+        self.notetypelength = {"e": 0.125, "q": 0.25, "h": 0.5, "w": 1}
+        self.notetypelength = {k:v / self.bps for k,v in self.notetypelength.items()}
+
+        self.notefrequencies = {}
         for octave in range(3,7):
             for note in range(12):
                 power = 12 * (octave - self.baseoctave) + note - self.noteletters.index(self.basenote)
-                self.notes[str(octave) + self.noteletters[note]] = self.basefrequency * ((2 ** (1/12)) ** power)
+                self.notefrequencies[str(octave) + self.noteletters[note]] = self.basefrequency * ((2 ** (1/12)) ** power)
     
-    def playnote(self, note, notelength, pause):
-        print('playing note', note, self.notes[note])
-        self.mtr.step(notelength, self.notes[note])
-        print('pausing for', pause)
-        time.sleep(pause)
+    def playnote(self, noteinfo):
+        note, notetype = noteinfo
+        if note == "r":
+            print('resting')
+            time.sleep(self.notetypelength[notetype])
+        else:
+            playlength = self.notetypelength[notetype] - self.release_length
+            wait = 1 / self.notefrequencies[note]
+            steps = int(playlength / wait)
+            print('playing note', note, self.notefrequencies[note], ',', steps, 'steps')
+            self.mtr.step(steps, wait)
+            time.sleep(self.release_length)
+
+    def playsong(self, song):
+        for note in song:
+            self.playnote(note)
 
     def printnotes(self):
-        for k in sorted(self.notes.keys()):
-            v = self.notes[k]
+        for k in sorted(self.notefrequencies.keys()):
+            v = self.notefrequencies[k]
             print(k, "\t", round(v, 8))
 
 
@@ -96,6 +116,7 @@ if __name__ == "__main__":
         pass
 
     mtr = BigBoy()
+
     #print('stepping', steps, 'steps over', wait, 's')
     #start_time = time.time()
     #mtr.step(steps, wait)
@@ -103,9 +124,14 @@ if __name__ == "__main__":
 
     mm = MusicalMotor(mtr)
     mm.printnotes()
-    notelength = 400
-    song = ["5c", "5c", "5d", "5c", "5f", "5e"]
-    for note in song:
-        mm.playnote(note, notelength, 0.1)
+    happybirthday = [("5c","e"), ("5c","e"), ("5d","q"), ("5c","q"), ("5f","q"), ("5e","h"),
+                     ("5c","e"), ("5c","e"), ("5d","q"), ("5c","q"), ("5g","q"), ("5f","h"),
+                     ("5c","e"), ("5c","e"), ("6c","q"), ("6a","q"), ("5f","q"), ("5e","q"), ("5d","q"),
+                     ("6a#","e"), ("6a#","e"), ("6a","q"), ("5f","q"), ("5g","q"), ("5f","h")]
+    mm.playsong(happybirthday)
+    #for i in range(12):
+    #    mm.release_length = 0
+    #    note = "5" + mm.noteletters[i]
+    #    mm.playnote((note,"q"))
 
     mtr.cleanup()
