@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import os
 import time
 import traceback
 
@@ -10,17 +11,26 @@ from imu import IMU
 from consoledisplay import SimpleDisplay, Text, VarBar, VarNumber
 
 class Bike():
-	def __init__(self):
+	def __init__(self, log=False):
+		if str(log) == "True":
+			dir_path = os.getcwd() + "/"
+			file_name = time.strftime("%Y.%m.%d.%H.%M.%S") + ".log"
+			log = dir_path + file_name
+		self.log = log
+
 		self.mtr = BigBoy()
 		self.imu = IMU()
 		self.fps = FPS(1.0)
 
+		self.t0 = time.time()
 		self.steps = 5
 		self.max_steps = 60
 		self.pos = 0
 		self.threshold = 1.5
 		self.tilt_constant = -25.0
- 
+
+		# record parameters at the top of the log
+
 	def balance(self):
 		x, y, self.tilt = self.imu.get_acceleration()
 		self.goal = int(self.tilt_constant * self.tilt)
@@ -29,6 +39,7 @@ class Bike():
 		time.sleep(0.005)
 
 	def balance_initial(self):
+		t = time.time() - self.t0
 		x, y, self.tilt = self.imu.get_acceleration()
 
 		if tilt < -self.threshold:
@@ -43,6 +54,18 @@ class Bike():
 		elif self.pos < 0:
 			self.response = 'recentering left'
 			self.try_step(self.steps)
+
+		if self.log:
+			data = [
+				t,
+				x,
+				y,
+				self.pos,
+				self.tilt,
+				self.response,
+			]
+			with open(self.log, 'a') as f:
+				f.write(",".join(data) + "\n")
 
 	def try_step(self, steps):
 		if abs(self.pos + steps) <= self.max_steps:
@@ -59,7 +82,7 @@ if __name__ == "__main__":
 	bike = None
 	display = None
 
-	try: 
+	try:
 		running = True
 		bike = Bike()
 		display = SimpleDisplay()
